@@ -22,7 +22,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -34,7 +33,6 @@ import android.widget.Toast;
 import org.y20k.transistor.helpers.NotificationHelper;
 
 import java.io.IOException;
-import java.util.HashMap;
 
 
 /**
@@ -67,7 +65,6 @@ public final class PlayerService extends Service implements
     /* Main class variables */
     private AudioManager mAudioManager;
     private MediaPlayer mMediaPlayer;
-    private MediaMetadataRetriever mMetadataRetriever;
     private String mStreamUri;
     private boolean mPlayback;
     private int mPlayerInstanceCounter;
@@ -230,17 +227,6 @@ public final class PlayerService extends Service implements
             // decrease counter
             mPlayerInstanceCounter--;
 
-            // TODO just a MediaMetadataRetriever test - will remove before next release
-            // see http://developer.android.com/reference/android/media/MediaMetadataRetriever.html
-            String author =  mMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_AUTHOR); // does not work
-            String album =  mMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM); // does not work
-            String artist =  mMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST); // does not work
-            String title = mMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE); // does not work
-
-            String mimeType = mMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE); // works
-
-            Log.v(LOG_TAG, "Metadata test: " + mimeType);
-
         } else {
             Log.v(LOG_TAG, "Stopping and re-initializing media player. Player instance count: " + mPlayerInstanceCounter);
 
@@ -381,11 +367,6 @@ public final class PlayerService extends Service implements
 
     /* Set up the media player */
     private void initializeMediaPlayer() {
-
-        // TODO just a MediaMetadataRetriever test - will remove before next release
-        mMetadataRetriever = new MediaMetadataRetriever();
-        mMetadataRetriever.setDataSource(mStreamUri, new HashMap<String, String>());
-
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mMediaPlayer.setOnCompletionListener(this);
@@ -508,7 +489,7 @@ public final class PlayerService extends Service implements
                 // stop playback
                 finishPlayback();
                 // notify user
-                Toast.makeText(context, R.string.toastalert_headphones_unplugged, Toast.LENGTH_LONG).show();
+                Toast.makeText(context, context.getString(R.string.toastalert_headphones_unplugged), Toast.LENGTH_LONG).show();
             }
         }
     }

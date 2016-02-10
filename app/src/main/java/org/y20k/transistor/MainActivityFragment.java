@@ -125,7 +125,7 @@ public final class MainActivityFragment extends Fragment {
             mFolder = new File(mActivity.getExternalFilesDir("Collection").toString());
         } catch (NullPointerException e) {
             // notify user and log exception
-            Toast.makeText(mActivity, R.string.toastalert_no_external_storage, Toast.LENGTH_LONG).show();
+            Toast.makeText(mActivity, mActivity.getString(R.string.toastalert_no_external_storage), Toast.LENGTH_LONG).show();
             Log.e(LOG_TAG, "Unable to access external storage.");
             // finish activity
             mActivity.finish();
@@ -462,7 +462,7 @@ public final class MainActivityFragment extends Fragment {
                     startActivityForResult(pickImageIntent, REQUEST_LOAD_IMAGE);
                 } else {
                     // permission denied
-                    Toast.makeText(mActivity, "Permissions denied", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mActivity, mActivity.getString(R.string.toastalert_permission_denied) + " READ_EXTERNAL_STORAGE", Toast.LENGTH_LONG).show();
                 }
             }
         }
@@ -554,7 +554,7 @@ public final class MainActivityFragment extends Fragment {
             playback = false;
 
             // inform user
-            Toast.makeText(mActivity, R.string.toastmessage_long_press_playback_stopped, Toast.LENGTH_LONG).show();
+            Toast.makeText(mActivity, mActivity.getString(R.string.toastmessage_long_press_playback_stopped), Toast.LENGTH_LONG).show();
         } else {
             // start playback service
             String stationName = mCollection.getStations().get((Integer) mCollectionAdapter.getItem(position)).getStationName();
@@ -567,7 +567,7 @@ public final class MainActivityFragment extends Fragment {
             playback = true;
 
             // inform user
-            Toast.makeText(mActivity, R.string.toastmessage_long_press_playback_started, Toast.LENGTH_LONG).show();
+            Toast.makeText(mActivity, mActivity.getString(R.string.toastmessage_long_press_playback_started), Toast.LENGTH_LONG).show();
         }
 
         // vibrate 50 milliseconds
