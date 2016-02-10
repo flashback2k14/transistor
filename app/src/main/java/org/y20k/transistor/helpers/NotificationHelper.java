@@ -19,6 +19,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.opengl.Visibility;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.ContextCompat;
@@ -61,6 +62,7 @@ public final class NotificationHelper {
         NotificationCompat.Builder builder;
         Notification notification;
         NotificationManager notificationManager;
+
         //String notificationText;
         String notificationTitle;
         int notificationColor;
@@ -69,24 +71,18 @@ public final class NotificationHelper {
         notificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
 
         // create content of notification
-        //notificationText = mContext.getString(R.string.notification_swipe_to_stop);
         notificationTitle = mContext.getString(R.string.notification_playing) + ": " + mStationName;
         notificationColor = ContextCompat.getColor(mContext, R.color.transistor_red);
 
         // explicit intent for notification tap
         Intent tapIntent = new Intent(mContext, PlayerActivity.class);
 
-
         // explicit intent to start player
-        Intent startIntent = new Intent(mContext, PlayerService.class);
-        startIntent.setAction(ACTION_START);
+        Intent startIntent = new Intent(mContext, PlayerService.class).setAction(ACTION_START);
         // explicit intent to pause player
-        Intent pauseIntent = new Intent(mContext, PlayerService.class);
-        pauseIntent.setAction(ACTION_PAUSE);
+        Intent pauseIntent = new Intent(mContext, PlayerService.class).setAction(ACTION_PAUSE);
         // explicit intent to stop player
-        Intent stopIntent = new Intent(mContext, PlayerService.class);
-        stopIntent.setAction(ACTION_STOP);
-
+        Intent stopIntent = new Intent(mContext, PlayerService.class).setAction(ACTION_STOP);
 
         // artificial back stack for started Activity.
         // -> navigating backward from the Activity leads to Home screen.
@@ -95,7 +91,6 @@ public final class NotificationHelper {
         stackBuilder.addParentStack(PlayerActivity.class);
         // backstack: add explicit intent for notification tap
         stackBuilder.addNextIntent(tapIntent);
-
 
         // pending intent wrapper for notification tap
         PendingIntent tapPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -106,14 +101,11 @@ public final class NotificationHelper {
         // pending intent wrapper for notification - stop player
         PendingIntent stopPendingIntent = PendingIntent.getService(mContext, 0, stopIntent, 0);
 
-
         // construct notification in builder
         builder = new NotificationCompat.Builder(mContext);
         builder.setSmallIcon(R.drawable.notification_icon_24dp);
         builder.setContentTitle(notificationTitle);
-        //builder.setContentText(notificationText);
         builder.setColor(notificationColor);
-        // builder.setLargeIcon(largeIcon);
 
         // notification actions
         builder.setContentIntent(tapPendingIntent);

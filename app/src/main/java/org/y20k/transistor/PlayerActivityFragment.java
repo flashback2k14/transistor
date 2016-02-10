@@ -63,7 +63,6 @@ public final class PlayerActivityFragment extends Fragment {
     /* Define log tag */
     private static final String LOG_TAG = PlayerActivityFragment.class.getSimpleName();
 
-
     /* Keys */
     private static final String STREAM_URI = "streamUri";
     private static final String STATION_NAME = "stationName";
@@ -74,7 +73,6 @@ public final class PlayerActivityFragment extends Fragment {
     private static final String ACTION_PLAYBACK_STOPPED = "org.y20k.transistor.action.PLAYBACK_STOPPED";
     private static final int REQUEST_LOAD_IMAGE = 1;
     private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 1;
-
 
     /* Main class variables */
     private Activity mActivity;
@@ -138,7 +136,6 @@ public final class PlayerActivityFragment extends Fragment {
 
         // fragment has options menu
         setHasOptionsMenu(true);
-
     }
 
 

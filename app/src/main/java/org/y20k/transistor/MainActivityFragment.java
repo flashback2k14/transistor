@@ -30,23 +30,23 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import org.y20k.transistor.core.Collection;
 import org.y20k.transistor.helpers.CollectionAdapter;
 import org.y20k.transistor.helpers.DialogAddStation;
 import org.y20k.transistor.helpers.ImageHelper;
+import org.y20k.transistor.helpers.Logger;
 import org.y20k.transistor.helpers.StationDownloader;
 
 import java.io.File;
@@ -62,7 +62,6 @@ public final class MainActivityFragment extends Fragment {
 
     /* Define log tag */
     private static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
-
 
     /* Keys */
     private static final String ACTION_COLLECTION_CHANGED = "org.y20k.transistor.action.COLLECTION_CHANGED";
@@ -82,7 +81,6 @@ public final class MainActivityFragment extends Fragment {
     private static final int REQUEST_LOAD_IMAGE = 1;
     private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 1;
 
-
     /* Main class variables */
     private Application mApplication;
     private Activity mActivity;
@@ -97,10 +95,12 @@ public final class MainActivityFragment extends Fragment {
     private int mTempStationImageID;
     private PlayerService mPlayerService;
 
+    /* Logger */
+    private Logger log;
+
 
     /* Constructor (default) */
-    public MainActivityFragment() {
-    }
+    public MainActivityFragment() {}
 
 
     @Override
@@ -120,13 +120,17 @@ public final class MainActivityFragment extends Fragment {
         // initialize temporary station image id
         mTempStationImageID = -1;
 
-        try {
-            // get collection folder from external storage
-            mFolder = new File(mActivity.getExternalFilesDir("Collection").toString());
-        } catch (NullPointerException e) {
+        // init Logger
+        AppApplication aa = new AppApplication();
+        log = new Logger(mActivity, aa.isDebugEnabled(), LOG_TAG);
+
+        // get Station file
+        File file = mActivity.getExternalFilesDir("Collection");
+        if (file != null) {
+            mFolder = file;
+        } else {
             // notify user and log exception
-            Toast.makeText(mActivity, mActivity.getString(R.string.toastalert_no_external_storage), Toast.LENGTH_LONG).show();
-            Log.e(LOG_TAG, "Unable to access external storage.");
+            log.error(mActivity.getString(R.string.toastalert_no_external_storage), true);
             // finish activity
             mActivity.finish();
         }
@@ -149,18 +153,15 @@ public final class MainActivityFragment extends Fragment {
 
         // initialize broadcast receivers
         initializeBroadcastReceivers();
-
     }
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
         // get list state from saved instance
         if (savedInstanceState != null) {
             mListState = savedInstanceState.getParcelable(MainActivityFragment.LIST_STATE);
         }
-
 
         // inflate rootview from xml
         mRootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -211,7 +212,6 @@ public final class MainActivityFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-
         // handle incoming intent
         handleNewStationIntent();
     }
@@ -220,7 +220,6 @@ public final class MainActivityFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-
         // fill collection adapter with stations
         refreshStationList();
     }
@@ -228,51 +227,45 @@ public final class MainActivityFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
+        String title;
+        String content;
+        Intent intent;
 
-        // action bar - add
-        if (id == R.id.menu_add) {
-            DialogAddStation dialog = new DialogAddStation(mActivity);
-            dialog.show();
-            return true;
+        switch (item.getItemId()) {
+            case R.id.menu_add:
+                DialogAddStation dialog = new DialogAddStation(mActivity);
+                dialog.show();
+                return true;
+
+            case R.id.menu_about:
+                // get title and content
+                title = mActivity.getString(R.string.header_about);
+                content = mActivity.getString(R.string.html_about);
+                // create intent
+                intent = new Intent(mActivity, InfosheetActivity.class);
+                // put title and content to intent
+                intent.putExtra(TITLE, title);
+                intent.putExtra(CONTENT, content);
+                // start activity
+                startActivity(intent);
+                return true;
+
+            case R.id.menu_howto:
+                // get title and content
+                title = mActivity.getString(R.string.header_howto);
+                content = mActivity.getString(R.string.html_howto);
+                // create intent
+                intent = new Intent(mActivity, InfosheetActivity.class);
+                // put title and content to intent
+                intent.putExtra(TITLE, title);
+                intent.putExtra(CONTENT, content);
+                // start activity
+                startActivity(intent);
+                return true;
+
+            default:
+                break;
         }
-
-        // action bar menu - about
-        else if (id == R.id.menu_about) {
-            // get title and content
-            String title = mActivity.getString(R.string.header_about);
-            String content = mActivity.getString(R.string.html_about);
-
-            // create intent
-            Intent intent = new Intent(mActivity, InfosheetActivity.class);
-
-            // put title and content to intent
-            intent.putExtra(TITLE, title);
-            intent.putExtra(CONTENT, content);
-
-            // start activity
-            startActivity(intent);
-            return true;
-        }
-
-        // action bar menu - how to
-        else if (id == R.id.menu_howto) {
-            // get title and content
-            String title = mActivity.getString(R.string.header_howto);
-            String content = mActivity.getString(R.string.html_howto);
-
-            // create intent
-            Intent intent = new Intent(mActivity, InfosheetActivity.class);
-
-            // put title and content to intent
-            intent.putExtra(TITLE, title);
-            intent.putExtra(CONTENT, content);
-
-            // start activity
-            startActivity(intent);
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -288,14 +281,13 @@ public final class MainActivityFragment extends Fragment {
 
     /* Fills collection adapter */
     private void fillCollectionAdapter() {
-
         Bitmap stationImage;
         Bitmap stationImageSmall;
         String stationName;
         ImageHelper imageHelper;
 
         // create collection
-        Log.v(LOG_TAG, "Create collection of stations (folder:" + mFolder.toString() + ").");
+        log.verbose("Create collection of stations (folder:" + mFolder.toString() + ").", false);
         mCollection = new Collection(mFolder);
 
         // put stations into collection adapter
@@ -305,7 +297,7 @@ public final class MainActivityFragment extends Fragment {
             // add name to linked list of names
             mStationNames.add(stationName);
 
-            // set image for station
+            // get image for station
             if (mCollection.getStations().get(i).getStationImageFile().exists()) {
                 // station image
                 stationImageSmall = BitmapFactory.decodeFile(mCollection.getStations().get(i).getStationImageFile().toString());
@@ -313,26 +305,29 @@ public final class MainActivityFragment extends Fragment {
                 // default image
                 stationImageSmall = BitmapFactory.decodeResource(mActivity.getResources(), R.drawable.ic_notesymbol);
             }
+
+            // set image for station
             imageHelper = new ImageHelper(stationImageSmall, mActivity);
             imageHelper.setBackgroundColor(R.color.transistor_grey_lighter);
             stationImage = imageHelper.createCircularFramedImage(192);
+
             // add image to linked list of images
             mStationImages.add(stationImage);
         }
+
         mCollectionAdapter.setCollection(mCollection);
         mCollectionAdapter.notifyDataSetChanged();
-
     }
 
 
     /* (Re-)fills collection adapter with stations */
     private void refreshStationList() {
-
         // clear and refill mCollection adapter
         if (!mStationNames.isEmpty() && !mStationImages.isEmpty()) {
             mStationNames.clear();
             mStationImages.clear();
         }
+
         fillCollectionAdapter();
 
         // show call to action, if necessary
@@ -343,28 +338,25 @@ public final class MainActivityFragment extends Fragment {
             actioncall.setVisibility(View.GONE);
         }
 
-        Log.v(LOG_TAG, "Refreshing list of stations");
-
+        log.verbose("Refreshing list of stations", false);
     }
 
 
     /* handles external taps on streaming links */
     private void handleNewStationIntent() {
-
         // get intent
         Intent intent = mActivity.getIntent();
 
         // check for intent of tyoe VIEW
-        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+        if (intent.getAction().equals(Intent.ACTION_VIEW)) {
 
             // set new station URL
             String newStationURL;
             // mime type check
             if (intent.getType() != null && intent.getType().startsWith("audio/")) {
                 newStationURL = intent.getDataString();
-            }
-            // no mime type
-            else {
+            } else {
+                // no mime type
                 newStationURL = intent.getDataString();
             }
 
@@ -382,12 +374,10 @@ public final class MainActivityFragment extends Fragment {
                 i.setAction(ACTION_COLLECTION_CHANGED);
                 LocalBroadcastManager.getInstance(mActivity).sendBroadcast(i);
 
+            } else {
+                // unsuccessful - log failure
+                log.verbose("Received an empty intent", false);
             }
-            // unsuccessful - log failure
-            else {
-                Log.v(LOG_TAG, "Received an empty intent");
-            }
-
         }
     }
 
@@ -451,7 +441,7 @@ public final class MainActivityFragment extends Fragment {
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
@@ -462,7 +452,7 @@ public final class MainActivityFragment extends Fragment {
                     startActivityForResult(pickImageIntent, REQUEST_LOAD_IMAGE);
                 } else {
                     // permission denied
-                    Toast.makeText(mActivity, mActivity.getString(R.string.toastalert_permission_denied) + " READ_EXTERNAL_STORAGE", Toast.LENGTH_LONG).show();
+                    log.error(mActivity.getString(R.string.toastalert_permission_denied) + " READ_EXTERNAL_STORAGE", true);
                 }
             }
         }
@@ -481,7 +471,6 @@ public final class MainActivityFragment extends Fragment {
 
     /* Processes new image and saves it to storage */
     private void processNewImage(Uri newImageUri) {
-
         ImageHelper imageHelper = new ImageHelper(newImageUri, mActivity);
         Bitmap newImage = imageHelper.getInputImage();
 
@@ -491,11 +480,10 @@ public final class MainActivityFragment extends Fragment {
             try (FileOutputStream out = new FileOutputStream(stationImageFile)) {
                 newImage.compress(Bitmap.CompressFormat.PNG, 100, out);
             } catch (IOException e) {
-                Log.e(LOG_TAG, "Unable to save: " + newImage.toString());
+                log.error("Unable to save: " + newImage.toString(), true);
             }
         } else {
-            Log.e(LOG_TAG, "Unable to get image from media picker: " + newImageUri.toString());
-            // TODO handle error here
+            log.error("Unable to get image from media picker: " + newImageUri.toString(), true);
         }
     }
 
@@ -503,23 +491,21 @@ public final class MainActivityFragment extends Fragment {
     /* Check permissions and start image picker */
     private void selectFromImagePicker() {
         // permission to read external storage granted
-        if (ActivityCompat.checkSelfPermission(mActivity,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
 
             // get system picker for images
             Intent pickImageIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             mActivity.startActivityForResult(pickImageIntent, REQUEST_LOAD_IMAGE);
-        }
-        // permission to read external storage not granted
-        else {
+        } else {
+            // permission to read external storage not granted
             if (ActivityCompat.shouldShowRequestPermissionRationale(mActivity, Manifest.permission.READ_EXTERNAL_STORAGE)) {
                 // ask for permission and explain why
                 Snackbar snackbar = Snackbar.make(mRootView, R.string.snackbar_request_storage_access, Snackbar.LENGTH_INDEFINITE);
                 snackbar.setAction(R.string.dialog_generic_button_okay, new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        ActivityCompat.requestPermissions(mActivity,
+                                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                                 PERMISSION_REQUEST_READ_EXTERNAL_STORAGE);
                     }
                 });
@@ -527,7 +513,8 @@ public final class MainActivityFragment extends Fragment {
 
             } else {
                 // ask for permission without explanation
-                ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                ActivityCompat.requestPermissions(mActivity,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         PERMISSION_REQUEST_READ_EXTERNAL_STORAGE);
             }
         }
@@ -536,7 +523,6 @@ public final class MainActivityFragment extends Fragment {
 
     /* Handles long click on list item */
     private void handleLongClick(int position) {
-
         int stationIDCurrent;
         int stationIDLast;
 
@@ -554,7 +540,7 @@ public final class MainActivityFragment extends Fragment {
             playback = false;
 
             // inform user
-            Toast.makeText(mActivity, mActivity.getString(R.string.toastmessage_long_press_playback_stopped), Toast.LENGTH_LONG).show();
+            log.debug(mActivity.getString(R.string.toastmessage_long_press_playback_stopped), true);
         } else {
             // start playback service
             String stationName = mCollection.getStations().get((Integer) mCollectionAdapter.getItem(position)).getStationName();
@@ -567,7 +553,7 @@ public final class MainActivityFragment extends Fragment {
             playback = true;
 
             // inform user
-            Toast.makeText(mActivity, mActivity.getString(R.string.toastmessage_long_press_playback_started), Toast.LENGTH_LONG).show();
+            log.debug(mActivity.getString(R.string.toastmessage_long_press_playback_started), true);
         }
 
         // vibrate 50 milliseconds
@@ -584,5 +570,4 @@ public final class MainActivityFragment extends Fragment {
         // refresh view
         refreshStationList();
     }
-
 }
