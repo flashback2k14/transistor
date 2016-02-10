@@ -5,11 +5,11 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "org.y20k.transistor"
+        applicationId "com.flashback.transistor_mod"
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 17
-        versionName "1.2.2 (Cygnet Committee)"
+        versionCode 20
+        versionName "1.3.0"
     }
     buildTypes {
         release {
